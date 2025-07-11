@@ -945,25 +945,6 @@ providers = {
 }
 ```
 
-## AiHubMix
-
-[AiHubMix](https://s.kiiro.ai/r/PPELHy) is a built-in provider for avante.nvim. You can register an account on the [AiHubMix official website](https://s.kiiro.ai/r/PPELHy), then create an API Key within the website, and set this API Key in your environment variables:
-
-```bash
-export AIHUBMIX_API_KEY=your_api_key
-```
-
-Then in your configuration, set `provider = "aihubmix"`, and set the `model` field to the model name you want to use, for example:
-
-```lua
-provider = "aihubmix",
-providers = {
-  aihubmix = {
-    model = "gpt-4o-2024-11-20",
-  },
-}
-```
-
 ## Custom providers
 
 Avante provides a set of default providers, but users can also create their own providers.
@@ -1023,8 +1004,7 @@ After changing the rag_service configuration, you need to manually delete the ra
 Avante's tools include some web search engines, currently support:
 
 - [Tavily](https://tavily.com/)
-- [SerpApi](https://serpapi.com/)
-- [SearchAPI](https://www.searchapi.io/)
+- [SerpApi - Search API](https://serpapi.com/)
 - Google's [Programmable Search Engine](https://developers.google.com/custom-search/v1/overview)
 - [Kagi](https://help.kagi.com/kagi/api/search.html)
 - [Brave Search](https://api-dashboard.search.brave.com/app/documentation/web-search/get-started)
@@ -1034,7 +1014,7 @@ The default is Tavily, and can be changed through configuring `Config.web_search
 
 ```lua
 web_search_engine = {
-  provider = "tavily", -- tavily, serpapi, searchapi, google, kagi, brave, or searxng
+  provider = "tavily", -- tavily, serpapi, google, kagi, brave, or searxng
   proxy = nil, -- proxy support, e.g., http://127.0.0.1:7890
 }
 ```
@@ -1043,7 +1023,6 @@ Environment variables required for providers:
 
 - Tavily: `TAVILY_API_KEY`
 - SerpApi: `SERPAPI_API_KEY`
-- SearchAPI: `SEARCHAPI_API_KEY`
 - Google:
   - `GOOGLE_SEARCH_API_KEY` as the [API key](https://developers.google.com/custom-search/v1/overview)
   - `GOOGLE_SEARCH_ENGINE_ID` as the [search engine](https://programmablesearchengine.google.com) ID

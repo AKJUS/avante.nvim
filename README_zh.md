@@ -727,25 +727,6 @@ providers = {
 }
 ```
 
-## AiHubMix
-
-[AiHubMix](https://s.kiiro.ai/r/PPELHy) 是 avante.nvim 的内置提供者。您可以在 [AiHubMix 官方网站](https://s.kiiro.ai/r/PPELHy) 上注册一个帐户，然后在网站内创建一个 API 密钥，并在环境变量中设置此 API 密钥：
-
-```bash
-export AIHUBMIX_API_KEY=your_api_key
-```
-
-然后在您的配置中设置 `provider = "aihubmix"`，并将 `model` 字段设置为您想要使用的模型名称，例如：
-
-```lua
-provider = "aihubmix",
-providers = {
-  aihubmix = {
-    model = "gpt-4o-2024-11-20",
-  },
-}
-```
-
 ## 自定义提供者
 
 Avante 提供了一组默认提供者，但用户也可以创建自己的提供者。
@@ -808,8 +789,7 @@ RAG 服务可以单独设置llm模型和嵌入模型。在 `llm` 和 `embed` 配
 Avante 的工具包括一些 Web 搜索引擎，目前支持：
 
 - [Tavily](https://tavily.com/)
-- [SerpApi](https://serpapi.com/)
-- [SearchAPI](https://www.searchapi.io/)
+- [SerpApi - Search API](https://serpapi.com/)
 - Google's [Programmable Search Engine](https://developers.google.com/custom-search/v1/overview)
 - [Kagi](https://help.kagi.com/kagi/api/search.html)
 - [Brave Search](https://api-dashboard.search.brave.com/app/documentation/web-search/get-started)
@@ -819,7 +799,7 @@ Avante 的工具包括一些 Web 搜索引擎，目前支持：
 
 ```lua
 web_search_engine = {
-  provider = "tavily", -- tavily, serpapi, searchapi, google, kagi, brave 或 searxng
+  provider = "tavily", -- tavily, serpapi, google, kagi, brave 或 searxng
   proxy = nil, -- proxy support, e.g., http://127.0.0.1:7890
 }
 ```
@@ -828,7 +808,6 @@ web_search_engine = {
 
 - Tavily: `TAVILY_API_KEY`
 - SerpApi: `SERPAPI_API_KEY`
-- SearchAPI: `SEARCHAPI_API_KEY`
 - Google:
   - `GOOGLE_SEARCH_API_KEY` 作为 [API 密钥](https://developers.google.com/custom-search/v1/overview)
   - `GOOGLE_SEARCH_ENGINE_ID` 作为 [搜索引擎](https://programmablesearchengine.google.com) ID
