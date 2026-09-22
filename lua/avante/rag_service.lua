@@ -353,12 +353,20 @@ end
 ---Checks http code when contacting server's /api/health
 ---@return boolean
 function M.is_ready()
-  return vim
-    .system(
-      { "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", M.get_rag_service_url() .. "/api/health" },
-      { text = true }
-    )
-    :wait().code == 0
+  local result = vim
+    .system({
+      "curl",
+      "-s",
+      "--max-time",
+      "2",
+      "-o",
+      "/dev/null",
+      "-w",
+      "%{http_code}",
+      M.get_rag_service_url() .. "/api/health",
+    }, { text = true })
+    :wait()
+  return result.code == 0 and vim.trim(result.stdout or "") == "200"
 end
 
 ---@class AvanteRagServiceAddResourceResponse
@@ -465,13 +473,17 @@ function M.retrieve(base_uri, query, on_complete)
       top_k = 10,
     }),
     timeout = 100000,
+    on_error = function(err) on_complete(nil, err.message) end,
     callback = function(resp)
       if resp.status ~= 200 then
-        Utils.error("failed to retrieve: " .. resp.body)
         on_complete(nil, resp.body)
         return
       end
-      local jsn = vim.json.decode(resp.body)
+      local ok, jsn = pcall(vim.json.decode, resp.body)
+      if not ok or type(jsn) ~= "table" or type(jsn.response) ~= "string" or type(jsn.sources) ~= "table" then
+        on_complete(nil, "Invalid RAG response")
+        return
+      end
       jsn.sources = vim
         .iter(jsn.sources)
         :map(function(source)

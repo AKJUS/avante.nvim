@@ -15,7 +15,8 @@ dependencies = {
   'lua == 5.1',
   'luarocks >= 3.11.1,< 4.0.0',
   'plenary.nvim',
-  'nui.nvim'
+  'nui.nvim',
+  'mega.cmdparse'
 }
 
 test_dependencies = { 'busted' }

@@ -1,4 +1,6 @@
 local cwd = vim.fn.getcwd()
+local deps = (os.getenv("DEPS_PATH") or "target/tests/deps") .. "/share/lua/5.1"
+package.path = deps .. "/?.lua;" .. deps .. "/?/init.lua;" .. package.path
 
 vim.opt.runtimepath:prepend(cwd)
 

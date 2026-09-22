@@ -18,6 +18,8 @@ local Utils = require("avante.utils")
 local P = require("avante.path")
 local api = vim.api
 
+require("avante.commands").setup()
+
 if Config.support_paste_image() then
   vim.paste = (function(overridden)
     ---@param lines string[]

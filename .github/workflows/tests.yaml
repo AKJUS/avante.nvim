@@ -33,14 +33,14 @@ jobs:
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@v23
 
+      - name: Setup test environment
+        run:
+          nix develop .#ci --command make setup-deps
+
       - name: Run tests
         run: |
           nix develop .#ci --command nvim --version
           nix develop .#ci --command make luatest
-
-      - name: Setup test environment
-        run:
-          nix develop .#ci --command make setup-deps
 
       - name: Typecheck
         run:

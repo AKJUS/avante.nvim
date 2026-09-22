@@ -35,6 +35,54 @@ describe("RagService", function()
     mock.revert(Config_mock)
   end)
 
+  describe("retrieval failures", function()
+    local stub = require("luassert.stub")
+    local curl
+    before_each(function()
+      curl = require("plenary.curl")
+      stub(curl, "post")
+    end)
+    after_each(function() curl.post:revert() end)
+
+    it("forwards transport errors to the caller", function()
+      curl.post.invokes(function(_, opts) opts.on_error({ message = "connection refused" }) end)
+      local callback = stub.new()
+      RagService.retrieve("file:///home/user/", "question", callback)
+      assert.stub(callback).was_called_with(nil, "connection refused")
+    end)
+
+    it("forwards HTTP errors and rejects malformed responses", function()
+      for _, response in ipairs({
+        { status = 503, body = "unavailable" },
+        { status = 200, body = "not json" },
+        { status = 200, body = "{}" },
+      }) do
+        curl.post.invokes(function(_, opts) opts.callback(response) end)
+        local callback = stub.new()
+        RagService.retrieve("file:///home/user/", "question", callback)
+        assert.stub(callback).was_called_with(nil, response.status == 503 and "unavailable" or "Invalid RAG response")
+      end
+    end)
+  end)
+
+  describe("health checks", function()
+    local stub = require("luassert.stub")
+    after_each(function() vim.system:revert() end)
+
+    it("requires HTTP 200 and a successful curl exit", function()
+      local result = { code = 0, stdout = "200" }
+      stub(vim, "system", function(args)
+        assert.is_true(vim.tbl_contains(args, "--max-time"))
+        return { wait = function() return result end }
+      end)
+      assert.is_true(RagService.is_ready())
+      result = { code = 0, stdout = "503" }
+      assert.is_false(RagService.is_ready())
+      result = { code = 7, stdout = "000" }
+      assert.is_false(RagService.is_ready())
+    end)
+  end)
+
   describe("URI conversion functions", function()
     it("should convert URIs between host and container formats", function()
       -- Test both directions of conversion

@@ -208,6 +208,7 @@ For building binary if you wish to build from source, then `cargo` is required. 
   dependencies = {
     "nvim-lua/plenary.nvim",
     "MunifTanjim/nui.nvim",
+    { "ColinKennedy/mega.cmdparse", dependencies = { "ColinKennedy/mega.logging" } },
     --- The below dependencies are optional,
     "nvim-mini/mini.pick", -- for file_selector provider mini.pick
     "nvim-telescope/telescope.nvim", -- for file_selector provider telescope
@@ -276,6 +277,8 @@ vim.pack.add({
   -- Deps
   'https://github.com/nvim-lua/plenary.nvim',
   'https://github.com/MunifTanjim/nui.nvim',
+  'https://github.com/ColinKennedy/mega.logging',
+  'https://github.com/ColinKennedy/mega.cmdparse',
 
   -- Optional deps
   'https://github.com/MeanderingProgrammer/render-markdown.nvim',
@@ -315,6 +318,8 @@ call plug#begin()
 " Deps
 Plug 'nvim-lua/plenary.nvim'
 Plug 'MunifTanjim/nui.nvim'
+Plug 'ColinKennedy/mega.logging'
+Plug 'ColinKennedy/mega.cmdparse'
 Plug 'MeanderingProgrammer/render-markdown.nvim'
 
 " Optional deps
@@ -350,6 +355,8 @@ add({
   depends = {
     'nvim-lua/plenary.nvim',
     'MunifTanjim/nui.nvim',
+    'ColinKennedy/mega.logging',
+    'ColinKennedy/mega.cmdparse',
     'echasnovski/mini.icons'
   },
   hooks = { post_checkout = function() vim.cmd('make') end }
@@ -1159,6 +1166,14 @@ Avante provides a set of default providers (codex, gemini, claude-code,...), but
 See `:h avante-acp` and [Custom Providers](https://github.com/yetone/avante.nvim/wiki/Custom-providers) for more information.
 
 ## RAG Service
+
+Manage the configured service with `:Avante rag start`, `:Avante rag stop`, and
+`:Avante rag status`. These commands also work when automatic startup is disabled.
+
+Use `:Avante rag query How does authentication work?` to query the current project.
+Everything after `query` is literal query text; omitting it opens an input prompt.
+The answer and source paths appear in a Markdown scratch split. Start the service
+before querying. Use `:Avante rag --help` for command help.
 
 Avante provides a RAG service, which is a tool for obtaining the required context for the AI to generate the codes. By default, it is not enabled. You can enable it this way:
 

@@ -682,6 +682,22 @@ Commands (:AvanteAsk,...)                                      *avante-commands*
 
  Commands
 
+                                                     *:Avante*
+ :Avante rag start
+         Start the configured RAG service and index the current project.
+ :Avante rag stop
+         Stop the configured RAG service.
+ :Avante rag status
+         Report whether the RAG service is healthy.
+ :Avante rag query [text...]
+         Query the current project. All text after query is used literally.
+         Without text, prompt for a query. Show the answer and source paths
+         in a Markdown scratch split. Example:
+>
+         :Avante rag query How does authentication work?
+<
+         Use :Avante --help or :Avante rag --help for generated help.
+
                                                      *:AvanteAsk*
  :AvanteAsk [question] [position=left|right|top|bottom] [ask=true|false]
          Ask AI about your code. Example:
@@ -759,6 +775,10 @@ Commands (:AvanteAsk,...)                                      *avante-commands*
                                                      *:AvanteACPModes*
  :AvanteACPModes
          Switch ACP mode.
+
+
+M.setup()                                                *avante-commands.setup*
+    Register the top-level Avante command.
 
 
 ==============================================================================
