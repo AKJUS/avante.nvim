@@ -1167,14 +1167,6 @@ See `:h avante-acp` and [Custom Providers](https://github.com/yetone/avante.nvim
 
 ## RAG Service
 
-Manage the configured service with `:Avante rag start`, `:Avante rag stop`, and
-`:Avante rag status`. These commands also work when automatic startup is disabled.
-
-Use `:Avante rag query How does authentication work?` to query the current project.
-Everything after `query` is literal query text; omitting it opens an input prompt.
-The answer and source paths appear in a Markdown scratch split. Start the service
-before querying. Use `:Avante rag --help` for command help.
-
 Avante provides a RAG service, which is a tool for obtaining the required context for the AI to generate the codes. By default, it is not enabled. You can enable it this way:
 
 ```lua
@@ -1201,6 +1193,11 @@ Avante provides a RAG service, which is a tool for obtaining the required contex
   },
 ```
 
+
+Manage the configured service with `:Avante rag {start,stop,status}`.
+
+Use `:Avante rag query How does authentication work?` to query the current project.
+
 The RAG Service can currently configure the LLM and embedding models separately. In the `llm` and `embed` configuration blocks, you can set the following fields:
 
 - `provider`: Model provider (e.g., "openai", "ollama", "dashscope", and "openrouter")
@@ -1209,7 +1206,7 @@ The RAG Service can currently configure the LLM and embedding models separately.
 - `model`: Model name
 - `extra`: Additional configuration options
 
-For detailed configuration of different model providers, you can check [here](./py/rag-service/README.md).
+For detailed configuration of different model providers, you can run --help of RAG the python executable [here](./py/rag-service/README.md). It can be built with nix via `nix build .#ragService`.
 
 The default runner uses Docker. Set `runner = "nix"` to use an installed
 `avante-rag-service` executable, or supply a function receiving the merged RAG config.
@@ -1225,12 +1222,25 @@ Its port is used for Nix startup and
 Docker's published host port (the container still listens on port 20250).
 URLs without an explicit port use 80 for HTTP or 443 for HTTPS. Requests preserve
 the configured host and any base path; trailing slashes are removed before appending API paths.
+<details>
+
+  <summary>Docker specific instructions</summary>
+
+NOTE: docker aspects have not been tested with recent RAG changes. Open an issue
+if you want to start the rag through docker
+
+`host_mount` is the path that will be mounted to the container, and the default is the home directory. The mount is required
+for the RAG service to access the files in the host machine. It is up to the user to decide if you want to mount the whole
+`/` directory, just the project directory, or the home directory. If you plan using avante and RAG event for projects
+stored outside your home directory, you will need to set the `host_mount` to the root directory of your file system.
 
 Docker mounts your home directory read-only by default. The `rag_service.host_mount`,
 `rag_service.image`, and `rag_service.docker_extra_args` options are deprecated;
 please remove them from your config. Existing values remain supported during the deprecation period.
 
 After changing the rag_service configuration, you need to manually delete the rag_service container to ensure the new configuration is used: `docker rm -fv avante-rag-service`
+</details>
+
 
 ## Tools
 
