@@ -75,8 +75,7 @@ local Utils = require("avante.utils")
 
 local M = {}
 
-local container_name = "avante-rag-service"
-local service_path = "/tmp/" .. container_name
+local rag_exec = "avante-rag-service"
 
 ---Starts the rag service if not already running
 --- and loads the current project into it
@@ -166,7 +165,7 @@ end
 ---@field docker_extra_args? string Extra arguments passed to docker run.
 
 local function get_current_image()
-  local cmd = { "docker", "inspect", "--format", "{{.Config.Image}}", container_name }
+  local cmd = { "docker", "inspect", "--format", "{{.Config.Image}}", rag_exec }
   local result = vim.system(cmd, { text = true }):wait()
   if result.code ~= 0 or result.stdout == "" then return nil end
   return result.stdout
@@ -181,19 +180,19 @@ function M.start_docker(config, opts)
   local embed_api_key, embed_extra = model_options(config.embed)
   local image = rawget(config, "image") or "quay.io/yetoneful/avante-rag-service:0.0.11"
   local data_path = M.get_data_path()
-  local cmd = { "docker", "inspect", "--format", "{{.State.Status}}", container_name }
+  local cmd = { "docker", "inspect", "--format", "{{.State.Status}}", rag_exec }
   local result = vim.system(cmd, { text = true }):wait()
   if result.code ~= 0 then Utils.debug(string.format("cmd: %s execution error", table.concat(cmd, " "))) end
   if result.stdout == "" then
-    Utils.debug(string.format("container %s not found, starting...", container_name))
+    Utils.debug(string.format("container %s not found, starting...", rag_exec))
   elseif result.stdout == "running" then
-    Utils.debug(string.format("container %s already running", container_name))
+    Utils.debug(string.format("container %s already running", rag_exec))
     local current_image = get_current_image()
     if current_image == image then return end
     Utils.debug(
       string.format(
         "container %s is running with different image: %s != %s, stopping...",
-        container_name,
+        rag_exec,
         current_image,
         image
       )
@@ -201,14 +200,14 @@ function M.start_docker(config, opts)
     M.stop_rag_service()
   end
   if result.stdout ~= "running" then
-    Utils.info(string.format("container %s already started but not running, stopping...", container_name))
+    Utils.info(string.format("container %s already started but not running, stopping...", rag_exec))
     M.stop_rag_service()
   end
   local cmd_ = string.format(
     "docker run --platform=linux/amd64 -d -p 0.0.0.0:%d:%d --name %s -v %s:/data -v %s:/host:ro -e ALLOW_RESET=TRUE -e DATA_DIR=/data -e RAG_EMBED_PROVIDER=%s -e RAG_EMBED_ENDPOINT=%s -e RAG_EMBED_API_KEY=%s -e RAG_EMBED_MODEL=%s -e RAG_EMBED_EXTRA=%s -e RAG_LLM_PROVIDER=%s -e RAG_LLM_ENDPOINT=%s -e RAG_LLM_API_KEY=%s -e RAG_LLM_MODEL=%s -e RAG_LLM_EXTRA=%s %s %s",
     M.get_rag_service_port(),
     20250, -- The Docker image listens on its default internal port.
-    container_name,
+    rag_exec,
     data_path,
     opts.host_mount or rawget(config, "host_mount") or assert(os.getenv("HOME"), "HOME is not set"),
     config.embed.provider,
@@ -228,9 +227,9 @@ function M.start_docker(config, opts)
     detach = true,
     on_exit = function(_, exit_code)
       if exit_code ~= 0 then
-        Utils.error(string.format("container %s failed to start, exit code: %d", container_name, exit_code))
+        Utils.error(string.format("container %s failed to start, exit code: %d", rag_exec, exit_code))
       else
-        Utils.debug(string.format("container %s started", container_name))
+        Utils.debug(string.format("container %s started", rag_exec))
       end
     end,
   })
@@ -241,15 +240,16 @@ end
 function M.start_nix(config)
   local llm_api_key, llm_extra = model_options(config.llm)
   local embed_api_key, embed_extra = model_options(config.embed)
-  local port = M.get_rag_service_port()
-  Utils.debug(string.format("launching %s with nix...", container_name))
+  Utils.debug(string.format("launching %s with nix...", rag_exec))
+
+  local service_path = "/tmp/" .. rag_exec
 
   -- can be launched beforehand via "uv run"
   local args = {
     "avante-rag-service",
     service_path,
     "--port",
-    port,
+    M.get_rag_service_port(),
     "--embed-provider",
     config.embed.provider,
     "--embed-extra",
@@ -263,19 +263,15 @@ function M.start_nix(config)
   local ok, job_or_err = pcall(vim.system, args, {
     detach = true,
     env = {
-      DATA_DIR = service_path,
-      RAG_EMBED_ENDPOINT = config.embed.endpoint,
       RAG_EMBED_API_KEY = embed_api_key,
-      RAG_EMBED_MODEL = config.embed.model,
-      RAG_LLM_ENDPOINT = config.llm.endpoint,
       RAG_LLM_API_KEY = llm_api_key,
       RAG_LLM_EXTRA = llm_extra,
     },
   }, function(res)
     if res.code ~= 0 then
-      Utils.error(string.format("service %s failed to start, exit code: %d", container_name, res.code))
+      Utils.error(string.format("service %s failed to start, exit code: %d", rag_exec, res.code))
     else
-      Utils.info(string.format("RAG service %s started successfully", container_name))
+      Utils.info(string.format("RAG service %s started successfully", rag_exec))
     end
   end)
   if not ok then
@@ -301,15 +297,15 @@ end
 --- the process yourself
 function M.stop_rag_service()
   if M.get_rag_service_runner() == "docker" then
-    local cmd = { "docker", "inspect", "--format", "{{.State.Status}}", container_name }
+    local cmd = { "docker", "inspect", "--format", "{{.State.Status}}", rag_exec }
     local result = vim.system(cmd, { text = true }):wait().stdout
-    if result ~= "" then vim.system({ "docker", "rm", "-fv", container_name }):wait() end
+    if result ~= "" then vim.system({ "docker", "rm", "-fv", rag_exec }):wait() end
   else
     -- TODO search process by port instead
-    local pid = vim.system({ "pgrep", "-f", service_path }, { text = true }):wait().stdout
+    local pid = vim.system({ "pgrep", "-f", rag_exec }, { text = true }):wait().stdout
     if pid ~= "" then
       vim.system({ "kill", "-9", pid }):wait()
-      Utils.debug(string.format("Attempted to kill processes related to %s", service_path))
+      Utils.debug(string.format("Attempted to kill processes related to %s", rag_exec))
     end
   end
 end

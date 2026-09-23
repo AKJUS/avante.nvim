@@ -1383,7 +1383,7 @@ def initialize_app(cli_settings: argparse.Namespace) -> FastAPI:
     state_home = Path(os.environ.get("XDG_STATE_HOME", ""))
     if not state_home.is_absolute():
         state_home = Path.home() / ".local" / "state"
-    log_dir = base_data_dir / "logs" if cli_settings.data_dir else state_home / "avante-rag-service" / "logs"
+    log_dir = base_data_dir / "logs" if cli_settings.data_dir else state_home / "avante-rag" / "logs"
     db_file = base_data_dir / "sqlite" / "indexing_history.db"
     for directory in (base_data_dir, log_dir, db_file.parent, chroma_persist_dir):
         directory.mkdir(parents=True, exist_ok=True)
