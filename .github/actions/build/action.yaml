@@ -47,16 +47,23 @@ runs:
       if: ${{ steps.platform.outputs.os_name != 'windows' }}
       uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # ratchet:DeterminateSystems/nix-installer-action@v22
 
+    - name: Install avante dependencies
+      if: ${{ steps.platform.outputs.os_name != 'windows' }}
+      shell: bash
+      run: nix develop .#ci --command make setup-deps
+
     - name: Build all crates (Linux/MacOS)
       shell: bash
       if: ${{ inputs.container == null && steps.platform.outputs.os_name != 'windows' }}
       run: |
-        # TODO reproduce packpath folder
-        # ./scripts/setup-deps.sh clone "deps/start"
-
         set -x
         mkdir -p ~/.cache/nvim
-        nix develop .#ci --command nvim -V3nvim.log --headless -u NONE --cmd "set rtp^=."  -c "runtime plugin/avante.lua" -c  "lua vim.g.avante = { debug= vim.log.levels.INFO }" -c "AvanteBuild source=true" +quit!
+        nix develop .#ci --command nvim -V3nvim.log --headless -u NONE \
+          --cmd "set rtp^=." \
+          --cmd 'lua package.path = "./target/tests/deps/share/lua/5.1/?.lua;./target/tests/deps/share/lua/5.1/?/init.lua;" .. package.path' \
+          -c "runtime plugin/avante.lua" \
+          -c "lua vim.g.avante = { debug = vim.log.levels.INFO }" \
+          -c "AvanteBuild source=true" +quit!
 
         # to help diagnose failures
         cat nvim.log
