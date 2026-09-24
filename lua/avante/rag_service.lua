@@ -457,6 +457,7 @@ end
 ---@param query string Your question e.g., "What's the average life expectancy in Ireland ?"
 ---@param on_complete fun(resp: AvanteRagServiceRetrieveResponse | nil, error: string | nil): nil
 function M.retrieve(base_uri, query, on_complete)
+  -- TODO make timeout configurable
   base_uri = M.to_container_uri(base_uri)
   curl.post(M.get_rag_service_url() .. "/api/v1/retrieve", {
     headers = {

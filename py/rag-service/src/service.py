@@ -52,7 +52,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from markdownify import markdownify as md
 from models.indexing_history import IndexingHistory
 from models.resource import Resource
-from openai import APIStatusError
+from openai import APIStatusError, APITimeoutError
 from providers.factory import initialize_embed_model, initialize_llm_model
 from pydantic import BaseModel, Field
 from services.indexing_history import indexing_history_service
@@ -1118,6 +1118,7 @@ async def remove_resource(request: ResourceURIRequest):
         200: {"description": "Successfully retrieved information"},
         413: {"description": "Input exceeds the model provider's batch size"},
         502: {"description": "Model provider rejected the retrieval request"},
+        504: {"description": "Model provider timed out during retrieval"},
         500: {"description": "Internal server error during retrieval"},
     },
 )
@@ -1208,6 +1209,10 @@ async def retrieve(request: RetrieveRequest):
     logger.info("Executing retrieval query")
     try:
         response = query_engine.query(request.query)
+    except APITimeoutError as e:
+        message = f"Model provider timed out during retrieval: {e.message}"
+        logger.warning(message)
+        raise HTTPException(status_code=504, detail=message) from e
     except APIStatusError as e:
         # OpenAI-compatible providers (including llama.cpp) return their useful
         # diagnostic in the response body, sometimes inside an `error` object.
