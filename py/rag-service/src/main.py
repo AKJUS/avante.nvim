@@ -26,7 +26,7 @@ def parse_cli_settings() -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=int(os.environ.get("PORT", "20250")),
+        default=20250,
         help="Port to listen on.",
     )
     parser.add_argument(
