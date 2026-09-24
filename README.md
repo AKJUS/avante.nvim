@@ -1169,6 +1169,18 @@ See `:h avante-acp` and [Custom Providers](https://github.com/yetone/avante.nvim
 
 Avante provides a RAG service, which is a tool for obtaining the required context for the AI to generate the codes. By default, it is not enabled. You can enable it this way:
 
+### Rag installation
+
+1. It can be built with nix via `nix build .#ragService`.
+2. or with [uv](https://docs.astral.sh/uv/). For instance:
+```
+uv venv
+source .venv/bin/activate
+uv pip install --editable py/rag-service
+```
+
+### RAG configuration
+
 ```lua
   rag_service = { -- RAG Service configuration
     enabled = false, -- Enables the RAG service
@@ -1194,6 +1206,8 @@ Avante provides a RAG service, which is a tool for obtaining the required contex
 ```
 
 
+### RAG usage
+
 Manage the configured service with `:Avante rag {start,stop,status}`.
 
 Use `:Avante rag query How does authentication work?` to query the current project.
@@ -1206,7 +1220,7 @@ The RAG Service can currently configure the LLM and embedding models separately.
 - `model`: Model name
 - `extra`: Additional configuration options
 
-For detailed configuration of different model providers, you can run --help of RAG the python executable [here](./py/rag-service/README.md). It can be built with nix via `nix build .#ragService`.
+For detailed configuration of different model providers, you can run --help of RAG the python executable [here](./py/rag-service/README.md).
 
 The default runner uses Docker. Set `runner = "native"` to use the native runner,
 which expects the `avante-rag-service` executable to be in `PATH`. You can also supply
