@@ -17,11 +17,14 @@ def parse_cli_settings() -> argparse.Namespace:
     available_providers = ["openai", "openai_like", "ollama", "dashscope", "openrouter"]
 
     """Parse service settings from command-line arguments."""
+    state_home = Path(os.environ.get("XDG_STATE_HOME", ""))
+    if not state_home.is_absolute():
+        state_home = Path.home() / ".local" / "state"
     parser = argparse.ArgumentParser(description="Run the Avante RAG service.")
     parser.add_argument(
         "--data-dir",
-        default=os.getenv("DATA_DIR"),
-        help="Data directory (defaults to DATA_DIR or the XDG data directory); also stores logs when set.",
+        default=str(state_home / "avante-rag"),
+        help="Data directory (defaults to $XDG_STATE_HOME/avante-rag, falling back to ~/.local/state/avante-rag); also stores logs.",
     )
     parser.add_argument(
         "--port",
@@ -96,10 +99,7 @@ def parse_cli_settings() -> argparse.Namespace:
     settings, _ = parser.parse_known_args()
     if settings.workers < 1:
         parser.error("--workers must be a positive integer")
-    data_home = Path(os.environ.get("XDG_DATA_HOME", ""))
-    if not data_home.is_absolute():
-        data_home = Path.home() / ".local" / "share"
-    settings.base_data_dir = Path(settings.data_dir) if settings.data_dir else data_home / "avante-rag-service"
+    settings.base_data_dir = Path(settings.data_dir)
     return settings
 
 
