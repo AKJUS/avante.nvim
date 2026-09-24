@@ -39,7 +39,7 @@ def parse_cli_settings() -> argparse.Namespace:
         "--log-level",
         type=str.upper,
         choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"],
-        default=os.environ.get("RAG_LOG_LEVEL", "INFO").upper(),
+        default="INFO",
         help="Logging level.",
     )
     parser.add_argument(
