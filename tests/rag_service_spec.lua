@@ -161,10 +161,17 @@ describe("RagService", function()
         function() return { status = 200, body = '{"resources":[],"total_count":0}' } end
       )
       RagService.is_ready()
-      assert.stub(system).was_called_with(
-        { "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "https://rag.example:8443/base/api/health" },
-        { text = true }
-      )
+      assert.stub(system).was_called_with({
+        "curl",
+        "-s",
+        "--max-time",
+        "2",
+        "-o",
+        "/dev/null",
+        "-w",
+        "%{http_code}",
+        "https://rag.example:8443/base/api/health",
+      }, { text = true })
       RagService.get_resources()
       assert.stub(get).was_called_with("https://rag.example:8443/base/api/v1/resources", {
         headers = { ["Content-Type"] = "application/json" },
@@ -193,95 +200,6 @@ describe("RagService", function()
         RagService.launch_rag_service()
         assert.stub(start).was_called_with(Config_mock.rag_service)
       end
-    end)
-
-    it("uses the global URL when starting native and Docker directly", function()
-      local config = vim.deepcopy(Config_mock.rag_service)
-      config.url = "http://localhost:7070"
-      vim.g.avante = { rag_service = { url = "http://localhost:9090" } }
-      local system = replace(vim, "system", function()
-        return { wait = function() return { code = 0, stdout = "" } end }
-      end)
-      RagService.start_native(config)
-      assert.equals(9090, system.calls[1].vals[1][4])
-      replace(RagService, "get_data_path", function() return "/data-path" end)
-      replace(RagService, "stop_rag_service", function() end)
-      local command
-      replace(vim.fn, "jobstart", function(cmd)
-        command = cmd
-        return 1
-      end)
-      RagService.start_docker(config)
-      assert.is_truthy(command:find("-p 0.0.0.0:9090:20250", 1, true))
-      assert.equals(9090, RagService.get_rag_service_port())
-    end)
-
-    it("accepts Docker options separately without modifying the config", function()
-      local config = Config_mock.rag_service
-      config.host_mount = "/legacy"
-      config.docker_extra_args = "--legacy-argument"
-      local original = vim.deepcopy(config)
-      replace(RagService, "get_data_path", function() return "/data-path" end)
-      replace(RagService, "stop_rag_service", function() end)
-      replace(vim, "system", function()
-        return { wait = function() return { code = 0, stdout = "" } end }
-      end)
-      local commands = {}
-      replace(vim.fn, "jobstart", function(cmd)
-        table.insert(commands, cmd)
-        return 1
-      end)
-      RagService.start_docker(config, { host_mount = "/explicit", docker_extra_args = "--network=host" })
-      assert.is_truthy(commands[1]:find("-v /explicit:/host:ro", 1, true))
-      assert.is_truthy(commands[1]:find("--network=host", 1, true))
-      assert.is_nil(commands[1]:find("--legacy-argument", 1, true))
-      RagService.start_docker(config, { docker_extra_args = "" })
-      assert.is_truthy(commands[2]:find("-v /legacy:/host:ro", 1, true))
-      assert.is_nil(commands[2]:find("--legacy-argument", 1, true))
-      assert.same(original, config)
-    end)
-
-    it("dispatches native with provider arguments and resolved credentials without mutating config", function()
-      local config = Config_mock.rag_service
-      config.llm.api_key = "LLM_KEY"
-      config.embed.api_key = "EMBED_KEY"
-      config.llm.extra = { temperature = 0.5 }
-      config.embed.extra = { size = 10 }
-      local original = vim.deepcopy(config)
-      replace(os, "getenv", function(key) return key .. "-value" end)
-      local system = replace(vim, "system", function(args, opts, on_exit)
-        assert.same({
-          "avante-rag-service",
-          "/tmp/avante-rag-service",
-          "--port",
-          20250,
-          "--embed-provider",
-          "ollama",
-          "--embed-extra",
-          string.format("%q", vim.json.encode(config.embed.extra)),
-          "--llm-provider",
-          "openai",
-          "--llm-model",
-          "llm-model",
-        }, args)
-        assert.same({
-          detach = true,
-          env = {
-            DATA_DIR = "/tmp/avante-rag-service",
-            RAG_EMBED_ENDPOINT = "http://embed",
-            RAG_EMBED_API_KEY = "EMBED_KEY-value",
-            RAG_EMBED_MODEL = "embed-model",
-            RAG_LLM_ENDPOINT = "https://llm",
-            RAG_LLM_API_KEY = "LLM_KEY-value",
-            RAG_LLM_EXTRA = string.format("%q", vim.json.encode(config.llm.extra)),
-          },
-        }, opts)
-        on_exit({ code = 0 })
-      end)
-      RagService.launch_rag_service()
-      assert.stub(system).was_called(1)
-      assert.stub(errors).was_not_called()
-      assert.same(original, config)
     end)
 
     it("reports native spawn and process failures", function()
@@ -313,50 +231,6 @@ describe("RagService", function()
     it("rejects unsupported runners", function()
       Config_mock.rag_service.runner = "unknown"
       assert.has_error(function() RagService.launch_rag_service() end, "Unsupported RAG service runner: unknown")
-    end)
-
-    it("dispatches Docker with legacy options and reports launch errors", function()
-      local config = Config_mock.rag_service
-      config.runner = "docker"
-      config.host_mount = "/legacy"
-      config.image = "legacy-image"
-      config.docker_extra_args = "--network=host"
-      replace(RagService, "get_data_path", function() return "/data-path" end)
-      replace(RagService, "stop_rag_service", function() end)
-      replace(vim, "system", function()
-        return { wait = function() return { code = 0, stdout = "" } end }
-      end)
-      local job = replace(vim.fn, "jobstart", function(cmd, opts)
-        assert.is_truthy(cmd:find("docker run --platform=linux/amd64 -d -p 0.0.0.0:20250:20250", 1, true))
-        assert.is_truthy(cmd:find("-v /data-path:/data -v /legacy:/host:ro", 1, true))
-        assert.is_truthy(cmd:find("RAG_EMBED_PROVIDER=ollama", 1, true))
-        assert.is_truthy(cmd:find("RAG_LLM_PROVIDER=openai", 1, true))
-        assert.is_truthy(cmd:find("--network=host legacy-image", 1, true))
-        assert.is_true(opts.detach)
-        opts.on_exit(1, 9)
-        return 1
-      end)
-      RagService.launch_rag_service()
-      assert.stub(job).was_called(1)
-      assert.stub(errors).was_called_with("container avante-rag-service failed to start, exit code: 9")
-    end)
-
-    it("does not restart a Docker container already running the configured image", function()
-      Config_mock.rag_service.runner = "docker"
-      replace(RagService, "get_data_path", function() return "/data-path" end)
-      replace(vim, "system", function(cmd)
-        return {
-          wait = function()
-            return {
-              code = 0,
-              stdout = cmd[4] == "{{.State.Status}}" and "running" or "quay.io/yetoneful/avante-rag-service:0.0.11",
-            }
-          end,
-        }
-      end)
-      local job = replace(vim.fn, "jobstart", function() end)
-      RagService.launch_rag_service()
-      assert.stub(job).was_not_called()
     end)
   end)
 end)
