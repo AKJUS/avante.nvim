@@ -28,6 +28,7 @@ dependencies = [
   "pathspec",
   "pillow", # Loaded by LlamaIndex's PowerPoint reader.
   "pydantic",
+  "sqlalchemy!=2.1.0", # 2.1.0's source package defines duplicate normalized extras, rejected by uv.
   "transformers", # Loaded by LlamaIndex's PowerPoint reader.
   "tree-sitter-language-pack",
   "uvicorn",
