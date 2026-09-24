@@ -276,8 +276,7 @@ function M.start_native(config)
     Utils.error([[
       Could not launch 'avante-rag-service'. The native runner expects this executable in PATH.
       you can install it via "nix profile add github:avante-corp/avante.nvim#ragService" or with "uv".
-      Error:\n]] .. job_or_err
-    )
+      Error:\n]] .. job_or_err)
   end
 end
 

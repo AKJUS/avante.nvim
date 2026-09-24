@@ -30,12 +30,12 @@ def parse_cli_settings() -> argparse.Namespace:
         "--port",
         type=int,
         default=20250,
-        help="Port to listen on.",
+        help="Port to listen on (default: %(default)s).",
     )
     parser.add_argument(
         "--workers",
         type=int,
-        default=3,
+        default=1,
         help="Number of worker processes (default: %(default)s).",
     )
     parser.add_argument(
@@ -43,7 +43,7 @@ def parse_cli_settings() -> argparse.Namespace:
         type=str.upper,
         choices=["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "NOTSET"],
         default="INFO",
-        help="Logging level.",
+        help="Logging level (default: %(default)s).",
     )
     parser.add_argument(
         "--embed-provider",

@@ -43,7 +43,6 @@ from llama_index.core import (
     SimpleDirectoryReader,
     StorageContext,
     VectorStoreIndex,
-    load_index_from_storage,
 )
 from llama_index.core.node_parser import CodeSplitter, SentenceSplitter
 from llama_index.core.postprocessor import MetadataReplacementPostProcessor
@@ -1440,6 +1439,7 @@ def initialize_app(cli_settings: argparse.Namespace) -> FastAPI:
         logger.error("Failed to decode --embed-extra, defaulting to empty dict.")
         embed_extra = {}
 
+    # expose as a setting ?
     max_embedding_tokens = parse_positive_int(
         embed_extra.pop("max_embedding_tokens", DEFAULT_MAX_EMBEDDING_TOKENS),
         DEFAULT_MAX_EMBEDDING_TOKENS,
@@ -1453,6 +1453,7 @@ def initialize_app(cli_settings: argparse.Namespace) -> FastAPI:
     logger.info("Embedding chunks limited to %d tokens", max_embedding_tokens)
 
     # Try to read previous config
+    # TODO merge settings from CLI with those ?
     config_home = Path(os.environ.get("XDG_CONFIG_HOME", ""))
     if not config_home.is_absolute():
         config_home = Path.home() / ".config"
@@ -1463,6 +1464,10 @@ def initialize_app(cli_settings: argparse.Namespace) -> FastAPI:
         "embed_model": rag_embed_model,
         "max_embedding_tokens": max_embedding_tokens,
     }
+
+    # we should ask the user what to do on change ?
+    # create a new DB with hash of config ?
+    # should the provider be part of the key ? we dont care about its port / address
     if config_file.exists():
         logger.info("Opening config file %s", config_file)
         with Path.open(config_file, "r") as f:
@@ -1470,6 +1475,7 @@ def initialize_app(cli_settings: argparse.Namespace) -> FastAPI:
             if prev_config != current_config:
                 # Clear existing data if config changed
                 logger.info("Detected config change, clearing existing data...")
+                # DESTRUCTIVE ACTION !
                 chroma_client.reset()
 
     # Save current config
@@ -1520,9 +1526,9 @@ def initialize_app(cli_settings: argparse.Namespace) -> FastAPI:
     li.Settings.llm = llm_model
 
     try:
-        index = load_index_from_storage(storage_context)
+        index = VectorStoreIndex.from_vector_store(vector_store)
     except (OSError, ValueError) as e:
-        logger.error("Failed to load index from storage %s: %s", str(chroma_persist_dir), e)
+        logger.info("Failed to load index from storage %s: %s", str(chroma_persist_dir), e)
         index = VectorStoreIndex([], storage_context=storage_context)
 
     app = FastAPI(
