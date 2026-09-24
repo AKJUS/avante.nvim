@@ -34,6 +34,7 @@
 ---
 --- The RAG service lives in py/rag-service and be run via `uv run`.
 --- `nix build .#ragService` will also give you the "avante-rag-service" executable.
+--- Set `runner = "native"` to use the native runner, which expects `avante-rag-service` in `PATH`.
 ---
 --- `runner` also accepts a function receiving the merged RagService configuration.
 --- Start the service asynchronously at the configured `url` and return; Avante polls readiness.
@@ -235,12 +236,12 @@ function M.start_docker(config, opts)
   })
 end
 
----Start the RAG service using the installed avante-rag-service executable.
+---Start the RAG service using the avante-rag-service executable in PATH.
 ---@param config avante.Config.RagService
-function M.start_nix(config)
+function M.start_native(config)
   local llm_api_key, llm_extra = model_options(config.llm)
   local embed_api_key, embed_extra = model_options(config.embed)
-  Utils.debug(string.format("launching %s with nix...", rag_exec))
+  Utils.debug(string.format("launching %s with native runner...", rag_exec))
 
   local service_path = "/tmp/" .. rag_exec
 
@@ -275,9 +276,10 @@ function M.start_nix(config)
     end
   end)
   if not ok then
-    Utils.error(
-      "Could not launch 'avante-rag-service', you can install it via nix profile add github:avante-corp/avante.nvim#ragService. Error:\n"
-        .. job_or_err
+    Utils.error([[
+      Could not launch 'avante-rag-service'. The native runner expects this executable in PATH.
+      you can install it via "nix profile add github:avante-corp/avante.nvim#ragService" or with "uv".
+      Error:\n]] .. job_or_err
     )
   end
 end
@@ -286,7 +288,7 @@ end
 ---Call `M.run_rag_service` to also poll readiness and register the project.
 ---@see M.run_rag_service
 function M.launch_rag_service()
-  local runners = { docker = M.start_docker, nix = M.start_nix }
+  local runners = { docker = M.start_docker, native = M.start_native }
   local runner = M.get_rag_service_runner()
   local start = type(runner) == "function" and runner or runners[runner]
   if not start then error(string.format("Unsupported RAG service runner: %s", tostring(runner))) end

@@ -809,7 +809,7 @@ Avante 提供了一个 RAG 服务，这是一个用于获取 AI 生成代码所�
   rag_service = { -- RAG 服务配置
     enabled = false, -- 启用 RAG 服务
     host_mount = os.getenv("HOME"), -- RAG 服务的主机挂载路径 (Docker 将挂载此路径)
-    runner = "docker", -- RAG 服务的运行器 (可以使用 docker 或 nix)
+    runner = "docker", -- RAG 服务的运行器 (可以使用 docker 或 native；native 要求 PATH 中有 avante-rag-service 可执行文件)
     llm = { -- RAG 服务使用的语言模型 (LLM) 配置
       provider = "openai", -- LLM 提供者
       endpoint = "https://api.openai.com/v1", -- LLM API 端点

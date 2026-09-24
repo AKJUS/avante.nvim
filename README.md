@@ -1173,7 +1173,7 @@ Avante provides a RAG service, which is a tool for obtaining the required contex
   rag_service = { -- RAG Service configuration
     enabled = false, -- Enables the RAG service
     url = "http://localhost:20250", -- Base URL used to communicate with the RAG service
-    runner = "docker", -- Runner for the RAG service (can use docker or nix)
+    runner = "docker", -- Runner for the RAG service (can use docker or native)
     llm = { -- Language Model (LLM) configuration for RAG service
       provider = "openai", -- LLM provider
       endpoint = "https://api.openai.com/v1", -- LLM API endpoint
@@ -1208,8 +1208,9 @@ The RAG Service can currently configure the LLM and embedding models separately.
 
 For detailed configuration of different model providers, you can run --help of RAG the python executable [here](./py/rag-service/README.md). It can be built with nix via `nix build .#ragService`.
 
-The default runner uses Docker. Set `runner = "nix"` to use an installed
-`avante-rag-service` executable, or supply a function receiving the merged RAG config.
+The default runner uses Docker. Set `runner = "native"` to use the native runner,
+which expects the `avante-rag-service` executable to be in `PATH`. You can also supply
+a function receiving the merged RAG config.
 Custom functions must start the service asynchronously at the configured URL and return;
 Avante polls readiness and registers the project. API-key fields remain environment-variable
 names, and the function handles its own credential validation. See `:h avante-rag-service`

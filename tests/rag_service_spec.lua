@@ -176,7 +176,7 @@ describe("RagService", function()
     local errors
     before_each(function()
       Config_mock.rag_service = {
-        runner = "nix",
+        runner = "native",
         llm = { provider = "openai", endpoint = "https://llm", api_key = "", model = "llm-model" },
         embed = { provider = "ollama", endpoint = "http://embed", api_key = "", model = "embed-model" },
       }
@@ -187,7 +187,7 @@ describe("RagService", function()
     end)
 
     it("dispatches through the exported starter functions", function()
-      for _, runner in ipairs({ "docker", "nix" }) do
+      for _, runner in ipairs({ "docker", "native" }) do
         Config_mock.rag_service.runner = runner
         local start = replace(RagService, "start_" .. runner, function() end)
         RagService.launch_rag_service()
@@ -195,14 +195,14 @@ describe("RagService", function()
       end
     end)
 
-    it("uses the global URL when starting Nix and Docker directly", function()
+    it("uses the global URL when starting native and Docker directly", function()
       local config = vim.deepcopy(Config_mock.rag_service)
       config.url = "http://localhost:7070"
       vim.g.avante = { rag_service = { url = "http://localhost:9090" } }
       local system = replace(vim, "system", function()
         return { wait = function() return { code = 0, stdout = "" } end }
       end)
-      RagService.start_nix(config)
+      RagService.start_native(config)
       assert.equals(9090, system.calls[1].vals[1][4])
       replace(RagService, "get_data_path", function() return "/data-path" end)
       replace(RagService, "stop_rag_service", function() end)
@@ -241,7 +241,7 @@ describe("RagService", function()
       assert.same(original, config)
     end)
 
-    it("dispatches Nix with provider arguments and resolved credentials without mutating config", function()
+    it("dispatches native with provider arguments and resolved credentials without mutating config", function()
       local config = Config_mock.rag_service
       config.llm.api_key = "LLM_KEY"
       config.embed.api_key = "EMBED_KEY"
@@ -284,7 +284,7 @@ describe("RagService", function()
       assert.same(original, config)
     end)
 
-    it("reports Nix spawn and process failures", function()
+    it("reports native spawn and process failures", function()
       local system = replace(vim, "system", function() error("executable missing") end)
       RagService.launch_rag_service()
       assert.stub(errors).was_called(1)
@@ -294,7 +294,7 @@ describe("RagService", function()
       assert.stub(errors).was_called_with("service avante-rag-service failed to start, exit code: 7")
     end)
 
-    for _, runner in ipairs({ "docker", "nix" }) do
+    for _, runner in ipairs({ "docker", "native" }) do
       for _, model in ipairs({ "llm", "embed" }) do
         it("rejects missing " .. model .. " credentials for " .. runner, function()
           Config_mock.rag_service.runner = runner

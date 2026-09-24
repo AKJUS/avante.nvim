@@ -154,6 +154,8 @@ function M.setup()
     if service.is_ready() then
       require("avante.utils").info("RAG service is running")
     else
+      -- todo forward extra args to start command or
+      -- we should probably add rag_providers
       service.run_rag_service()
     end
   end)

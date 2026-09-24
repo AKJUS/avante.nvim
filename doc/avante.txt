@@ -1523,6 +1523,7 @@ avante RAG service                                          *avante-rag-service*
 
  The RAG service lives in py/rag-service and be run via `uv run`.
  `nix build .#ragService` will also give you the "avante-rag-service" executable.
+ Set `runner = "native"` to use the native runner, which expects `avante-rag-service` in `PATH`.
 
  `runner` also accepts a function receiving the merged RagService configuration.
  Start the service asynchronously at the configured `url` and return; Avante polls readiness.
@@ -1599,8 +1600,8 @@ M.start_docker({config}, {opts?})              *avante-rag-service.start_docker*
         {opts?}   (avante.RagServiceDockerOptions)  Defaults to legacy config values, then HOME and no extra arguments.
 
 
-M.start_nix({config})                             *avante-rag-service.start_nix*
-    Start the RAG service using the installed avante-rag-service executable.
+M.start_native({config})                       *avante-rag-service.start_native*
+    Start the RAG service using the avante-rag-service executable in PATH.
 
     Parameters: ~
         {config}  (avante.Config.RagService)
@@ -1672,8 +1673,8 @@ AvanteRagServiceRetrieveResponse              *AvanteRagServiceRetrieveResponse*
 M.retrieve({base_uri}, {query}, {on_complete})     *avante-rag-service.retrieve*
 
     Parameters: ~
-        {base_uri}     (string)
-        {query}        (string)
+        {base_uri}     (string)                                                               e.g. "file:///home/USER/plugins/avante.nvim/"
+        {query}        (string)                                                               Your question e.g., "What's the average life expectancy in Ireland ?"
         {on_complete}  (fun(resp:AvanteRagServiceRetrieveResponse|nil,error:string|nil):nil)
 
 
