@@ -23,6 +23,7 @@ dependencies = [
   "llama-index-readers-file",
   "llama-index-vector-stores-chroma",
   "markdownify",
+  "openai", # Provider error handling for OpenAI-compatible APIs.
   "openpyxl", # Loaded by LlamaIndex's XLSX reader.
   "pathspec",
   "pillow", # Loaded by LlamaIndex's PowerPoint reader.

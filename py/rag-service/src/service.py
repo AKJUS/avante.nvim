@@ -52,6 +52,7 @@ from llama_index.vector_stores.chroma import ChromaVectorStore
 from markdownify import markdownify as md
 from models.indexing_history import IndexingHistory
 from models.resource import Resource
+from openai import APIStatusError
 from providers.factory import initialize_embed_model, initialize_llm_model
 from pydantic import BaseModel, Field
 from services.indexing_history import indexing_history_service
@@ -1115,6 +1116,8 @@ async def remove_resource(request: ResourceURIRequest):
     """,
     responses={
         200: {"description": "Successfully retrieved information"},
+        413: {"description": "Input exceeds the model provider's batch size"},
+        502: {"description": "Model provider rejected the retrieval request"},
         500: {"description": "Internal server error during retrieval"},
     },
 )
@@ -1203,7 +1206,22 @@ async def retrieve(request: RetrieveRequest):
     )
 
     logger.info("Executing retrieval query")
-    response = query_engine.query(request.query)
+    try:
+        response = query_engine.query(request.query)
+    except APIStatusError as e:
+        # OpenAI-compatible providers (including llama.cpp) return their useful
+        # diagnostic in the response body, sometimes inside an `error` object.
+        body = e.body
+        if isinstance(body, dict):
+            body = body.get("error", body)
+        message = body.get("message") if isinstance(body, dict) else body
+        if not isinstance(message, str) or not message.strip():
+            message = e.message
+        status_code = 502
+        if re.search(r"input \(\d+ tokens\) is too large to process", message, re.IGNORECASE):
+            status_code = 413
+        logger.warning("Model provider rejected retrieval (HTTP %d): %s", e.status_code, message)
+        raise HTTPException(status_code=status_code, detail=message) from e
 
     # If no documents were found in the specified directory
     if not response.source_nodes:

@@ -243,12 +243,9 @@ function M.start_native(config)
   local embed_api_key, embed_extra = model_options(config.embed)
   Utils.debug(string.format("launching %s with native runner...", rag_exec))
 
-  local service_path = "/tmp/" .. rag_exec
-
   -- can be launched beforehand via "uv run"
   local args = {
     "avante-rag-service",
-    service_path,
     "--port",
     M.get_rag_service_port(),
     "--embed-provider",
@@ -456,8 +453,8 @@ end
 ---@field response string
 ---@field sources AvanteRagServiceRetrieveSource[]
 
----@param base_uri string
----@param query string
+---@param base_uri string e.g. "file:///home/USER/plugins/avante.nvim/"
+---@param query string Your question e.g., "What's the average life expectancy in Ireland ?"
 ---@param on_complete fun(resp: AvanteRagServiceRetrieveResponse | nil, error: string | nil): nil
 function M.retrieve(base_uri, query, on_complete)
   base_uri = M.to_container_uri(base_uri)
@@ -489,7 +486,7 @@ function M.retrieve(base_uri, query, on_complete)
           return vim.tbl_deep_extend("force", source, { uri = uri })
         end)
         :totable()
-      Utils.debug("Sucessfully retreived rag answer")
+      Utils.debug("Successfully retrieved rag answer")
       on_complete(jsn, nil)
     end,
   })
